@@ -2,7 +2,7 @@
 #![no_main]
 #![feature(offset_of)]
 
-use core::{mem::offset_of, mem::size_of, panic::PanicInfo, ptr::null_mut, slice};
+use core::{arch::asm, mem::offset_of, mem::size_of, panic::PanicInfo, ptr::null_mut, slice};
 
 type EfiVoid = u8;
 type EfiHandle = u64;
@@ -13,6 +13,10 @@ type Result<T> = core::result::Result<T, &'static str>;
 #[repr(u64)]
 enum EfiStatus {
     Success = 0,
+}
+
+pub fn hlt() {
+    unsafe { asm!("hlt") }
 }
 
 fn locate_graphic_protocol<'a>(
@@ -40,6 +44,9 @@ fn efi_main(_image_handle: EfiHandle, efi_system_table: &EfiSystemTable) {
     };
     for e in vram {
         *e = 0xffffff;
+    }
+    loop {
+        hlt()
     }
 }
 
@@ -109,5 +116,7 @@ const EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID: EfiGuid = EfiGuid {
 
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
-    loop {}
+    loop {
+        hlt()
+    }
 }
